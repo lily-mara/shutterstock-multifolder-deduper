@@ -1,0 +1,10 @@
+[package]
+
+name = "shutterstock-deduper"
+version = "0.0.1"
+authors = ["Nate Mara <natemara@gmail.com>"]
+
+[dependencies]
+regex = "0.1.14"
+regex_macros = "0.1.8"
+getopts = "0.2.3"
