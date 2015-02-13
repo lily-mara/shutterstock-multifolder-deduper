@@ -1,7 +1,7 @@
 #![feature(io,path,core,os,plugin)]
 
 #![plugin(regex_macros)]
-extern crate regex_macros;
+#[no_link] extern crate regex_macros;
 extern crate regex;
 
 extern crate getopts;
@@ -61,7 +61,6 @@ fn main() {
     let mut duplicates = Box::new(HashSet::new());
 
     let matcher = Matcher::new();
-    println!("{}", matcher.image_number("shutterstock_1123237526423789.jpg"));
 
     match folder {
         Ok(results) => {
@@ -81,7 +80,7 @@ fn main() {
         Err(e) => println!("{}", e),
     }
 
-    println!("{} duplicates found, {} files scanned", duplicates.len(), duplicates.len() + image_nums.len() - 1);
+    println!("{} duplicates found, {} files scanned", duplicates.len(), duplicates.len() + image_nums.len());
 
     let mut out_file = match matches.opt_str("o") {
         Some(f) => Option::Some(File::create(&Path::new(f)).unwrap()),
