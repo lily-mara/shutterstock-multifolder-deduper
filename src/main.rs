@@ -42,6 +42,7 @@ fn main() {
     opts.optopt("o", "output-file", "the file to output the log to", "OUTPUT");
     opts.optflag("d", "delete", "automatically delete the duplicate files");
     opts.optflag("h", "help", "print this help menu");
+    opts.optflag("q", "quiet", "don't display duplicates as they are found");
 
     let matches = match opts.parse(args.tail()) {
         Ok(m) => m,
@@ -61,6 +62,8 @@ fn main() {
         },
     };
 
+    let quiet = matches.opt_present("q");
+
     let folder = fs::walk_dir(&Path::new(directory));
 
     let mut image_nums = Box::new(HashSet::new());
@@ -77,7 +80,9 @@ fn main() {
                     match num {
                         Some(n) => {
                             if image_nums.contains(&n) {
-                                println!("Duplicate! {}", file_path.display());
+                                if !quiet {
+                                    println!("Duplicate! {}", file_path.display());
+                                }
                                 duplicates.insert(file_path);
                             } else {
                                 image_nums.insert(n);
