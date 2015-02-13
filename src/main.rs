@@ -22,8 +22,14 @@ impl Matcher {
         Matcher { exp: regex!(r"^shutterstock_(\d+)") }
     }
 
-    fn image_number(&self, test: &str) -> String {
-        self.exp.captures(test).unwrap().at(1).unwrap_or("").to_string()
+    fn image_number(&self, test: &str) -> Option<String> {
+        match self.exp.captures(test) {
+            Some(cap) => { match cap.at(1) {
+                Some(s) => return Some(s.to_string()),
+                None => return None,
+            }},
+            None => return None,
+        }
     }
 }
 
@@ -68,11 +74,16 @@ fn main() {
                 if file_path.is_file() {
                     let num = matcher.image_number(file_path.filename_str().unwrap());
 
-                    if image_nums.contains(&num) && num != "" {
-                        println!("Duplicate! {}", file_path.display());
-                        duplicates.insert(file_path);
-                    } else {
-                        image_nums.insert(num);
+                    match num {
+                        Some(n) => {
+                            if image_nums.contains(&n) {
+                                println!("Duplicate! {}", file_path.display());
+                                duplicates.insert(file_path);
+                            } else {
+                                image_nums.insert(n);
+                            }
+                        },
+                        None => {},
                     }
                 }
             }
