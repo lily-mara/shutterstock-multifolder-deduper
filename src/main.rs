@@ -1,4 +1,4 @@
-#![feature(io,path,core,os,plugin)]
+#![feature(old_io,old_path,core,os,plugin)]
 
 #![plugin(regex_macros)]
 #[no_link] extern crate regex_macros;
@@ -38,7 +38,8 @@ fn main() {
     let program = args[0].clone();
 
     let mut opts = Options::new();
-    opts.optopt("i", "input-dir", "set folder to scan (required)", "DIRECTORY");
+    opts.optopt("i", "input-dir", "the folder that files will be deleted from (required)", "DIRECTORY");
+    opts.optopt("m", "master-dir", "the folder that will be used as a master list (required)", "DIRECTORY");
     opts.optopt("o", "output-file", "the file to output the log to", "OUTPUT");
     opts.optflag("d", "delete", "automatically delete the duplicate files");
     opts.optflag("h", "help", "print this help menu");
@@ -54,7 +55,15 @@ fn main() {
         return;
     }
 
-    let directory = match matches.opt_str("i") {
+    let input_directory = match matches.opt_str("i") {
+        Some(d) => d,
+        None => {
+            print_usage(&program, opts);
+            return;
+        },
+    };
+
+    let master_directory = match matches.opt_str("m") {
         Some(d) => d,
         None => {
             print_usage(&program, opts);
@@ -64,14 +73,33 @@ fn main() {
 
     let quiet = matches.opt_present("q");
 
-    let folder = fs::walk_dir(&Path::new(directory));
+    let input_files = fs::walk_dir(&Path::new(input_directory));
+    let master_files = fs::walk_dir(&Path::new(master_directory));
 
     let mut image_nums = Box::new(HashSet::new());
     let mut duplicates = Box::new(HashSet::new());
 
     let matcher = Matcher::new();
 
-    match folder {
+    match master_files {
+        Ok(results) => {
+            for file_path in results {
+                if file_path.is_file() {
+                    let num = matcher.image_number(file_path.filename_str().unwrap());
+
+                    match num {
+                        Some(n) => {
+                            image_nums.insert(n);
+                        },
+                        None => {},
+                    }
+                }
+            }
+        },
+        Err(e) => println!("{}", e),
+    }
+
+    match input_files {
         Ok(results) => {
             for file_path in results {
                 if file_path.is_file() {
@@ -81,11 +109,9 @@ fn main() {
                         Some(n) => {
                             if image_nums.contains(&n) {
                                 if !quiet {
-                                    println!("Duplicate! {}", file_path.display());
+                                    println!("Duplicate: {}", file_path.display());
                                 }
                                 duplicates.insert(file_path);
-                            } else {
-                                image_nums.insert(n);
                             }
                         },
                         None => {},
